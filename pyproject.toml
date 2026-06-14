@@ -8,6 +8,7 @@ dependencies = [
     "gradio>=6.17.3",
     "llama-index>=0.14.22",
     "llama-index-embeddings-cohere>=0.8.0",
+    "llama-index-llms-google-genai>=0.9.5",
     "llama-index-postprocessor-cohere-rerank>=0.9.0",
     "llama-index-vector-stores-pinecone>=0.8.0",
     "netfree-unstrict-ssl>=0.1.3",

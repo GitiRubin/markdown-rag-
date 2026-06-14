@@ -11,11 +11,13 @@ load_dotenv()
 # secrets
 COHERE_API_KEY = os.environ["COHERE_API_KEY"]
 PINECONE_API_KEY = os.environ["PINECONE_API_KEY"]
+GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 
 # constants
 INDEX_NAME = "rag"
 EMBED_MODEL = "embed-english-v3.0"
 NAMESPACE = "resume_formatter"
+LLM_MODEL = "gemini-2.5-flash"            
 
 # shared clients — created once, imported everywhere
 pc = Pinecone(api_key=PINECONE_API_KEY)
