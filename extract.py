@@ -25,12 +25,16 @@ BACKOFF = 30            # seconds to wait before retrying a throttled/unavailabl
 
 PROMPT = PromptTemplate(
     "You are extracting structured project memory from a markdown document.\n"
-    "Extract every Decision, Issue, and WorkLogEntry that this document is the "
-    "PRIMARY record of. Rules:\n"
+    "Extract every Decision, Issue, and WorkLogEntry that this document DESCRIBES "
+    "in its own right. Rules:\n"
     "- Return empty lists for any category that is not present.\n"
-    "- Extract a record only where the document itself documents it. If the text "
-    "merely mentions or refers to something recorded elsewhere (e.g. a work-log "
-    "entry that says it reviewed bugs), do NOT extract those as records.\n"
+    "- Extract an item when the document itself describes it — gives its details, "
+    "symptom, rationale, or a dedicated entry/section. This INCLUDES spelled-out "
+    "lists of risks, limitations, edge cases, and future concerns, even if they "
+    "are framed as potential rather than things that already happened.\n"
+    "- Do NOT extract an item that is only mentioned in passing or as a reference "
+    "to another document (e.g. a work-log entry saying it 'reviewed the bug "
+    "tracker' or 'added concerns about X' without describing them here).\n"
     "- Do NOT invent, infer, or duplicate records beyond what the text states.\n"
     "- Leave source_files empty; the pipeline sets it.\n\n"
     "Document:\n{document}"
@@ -53,10 +57,18 @@ def _complete_with_retry(prompt: str) -> ExtractedData:
             time.sleep(BACKOFF)
 
 
+def _drop_empty(data: ExtractedData) -> None:
+    """Remove junk records the LLM sometimes emits (e.g. a blank decision)."""
+    data.decisions = [d for d in data.decisions if d.title.strip()]
+    data.issues = [i for i in data.issues if i.title.strip()]
+    data.work_log = [w for w in data.work_log if w.title.strip()]
+
+
 def extract_file(path: Path) -> ExtractedData:
-    """Run unified extraction on one file and stamp source_file on every record."""
+    """Run unified extraction on one file and stamp source_files on every record."""
     text = path.read_text(encoding="utf-8")
     data = _complete_with_retry(PROMPT.format(document=text))
+    _drop_empty(data)
     for record in (*data.decisions, *data.issues, *data.work_log):
         record.source_files = [path.name]
     return data

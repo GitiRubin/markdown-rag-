@@ -18,7 +18,7 @@ OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 INDEX_NAME = "rag"
 EMBED_MODEL = "embed-english-v3.0"
 NAMESPACE = "resume_formatter"
-LLM_MODEL = "gpt-4o-mini"
+LLM_MODEL = "gpt-4o"
 STRUCTURED_DATA_PATH = "structured_data.json"   # output of the Data Extraction stage
 
 # shared clients — created once, imported everywhere
