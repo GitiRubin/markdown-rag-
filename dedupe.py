@@ -19,16 +19,16 @@ import time
 
 from pydantic import BaseModel, Field
 from llama_index.core import PromptTemplate
-from llama_index.llms.google_genai import GoogleGenAI
+from llama_index.llms.openai import OpenAI
 
-from config import GEMINI_API_KEY, LLM_MODEL
+from config import OPENAI_API_KEY, LLM_MODEL
 from schemas import Issue
 
 MAX_RETRIES = 4
 BACKOFF = 30            # seconds before retrying a throttled/unavailable call
 
 # temperature 0 — dedup must be as deterministic and literal as the API allows
-dedup_llm = GoogleGenAI(api_key=GEMINI_API_KEY, model=LLM_MODEL, temperature=0)
+dedup_llm = OpenAI(api_key=OPENAI_API_KEY, model=LLM_MODEL, temperature=0)
 
 
 class DedupedIssues(BaseModel):

@@ -1,8 +1,8 @@
-from config import pincone_vector_store, COHERE_API_KEY, EMBED_MODEL, GEMINI_API_KEY, LLM_MODEL
+from config import pincone_vector_store, COHERE_API_KEY, EMBED_MODEL, OPENAI_API_KEY, LLM_MODEL
 from llama_index.core import VectorStoreIndex, get_response_synthesizer
 from llama_index.core.response_synthesizers import ResponseMode
 from llama_index.embeddings.cohere import CohereEmbedding
-from llama_index.llms.google_genai import GoogleGenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.postprocessor.cohere_rerank import CohereRerank
 from ui import build_app
 from workflows import Workflow, Context, step
@@ -49,7 +49,7 @@ class RAGWorkflow(Workflow):
         self.index = VectorStoreIndex.from_vector_store(pincone_vector_store, embed_model=embed_model)
         self.retriever = self.index.as_retriever(similarity_top_k=candidate_k)
         self.reranker = CohereRerank(api_key=COHERE_API_KEY, model="rerank-english-v3.0", top_n=top_k)
-        llm = GoogleGenAI(api_key=GEMINI_API_KEY, model=LLM_MODEL)
+        llm = OpenAI(api_key=OPENAI_API_KEY, model=LLM_MODEL)
         self.synthesizer = get_response_synthesizer(llm=llm, response_mode=ResponseMode.COMPACT)
 
     # 1. INPUT validation (guard) — empty query never reaches the network. No LLM here.

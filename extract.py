@@ -5,8 +5,8 @@ to fill `ExtractedData` (all categories at once). Empty lists are valid. Every
 returned record is stamped with its source file, then the per-file results are
 merged and written to `structured_data.json`. Run with `uv run extract.py`.
 
-Calls are throttled and retried: the Gemini free tier allows 5 requests/minute,
-so we space requests and back off on transient 429/503 errors.
+Calls are throttled and retried: we space requests and back off on transient
+429 (rate limit) / 503 errors.
 """
 
 import time
