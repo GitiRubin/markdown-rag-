@@ -5,6 +5,7 @@ from llama_index.embeddings.cohere import CohereEmbedding
 from llama_index.llms.openai import OpenAI
 from llama_index.postprocessor.cohere_rerank import CohereRerank
 from ui import build_app
+from router import build_router_engine
 from workflows import Workflow, Context, step
 from workflows.events import StartEvent, StopEvent, Event
 
@@ -128,11 +129,12 @@ def format_sources(nodes):
     return "\n\n---\n\n".join(cards)
 
 
-def make_chat(workflow):
+def make_chat(engine):
     async def chat(message, history):
-        # Every StopEvent now returns the SAME shape: {"answer": str, "nodes": list}.
-        result = await workflow.run(user_query=message)
-        answer, nodes = result["answer"], result["nodes"]
+        # The router picks a tool; both return a Response(response=str, source_nodes=list).
+        # Structured answers carry no source nodes → we show just the answer.
+        response = await engine.aquery(message)
+        answer, nodes = response.response or "", response.source_nodes or []
         if not nodes:
             return answer
         return (
@@ -146,4 +148,5 @@ def make_chat(workflow):
 
 if __name__ == "__main__":
     workflow = RAGWorkflow(timeout=60)
-    build_app(make_chat(workflow)).launch()
+    engine = build_router_engine(workflow)
+    build_app(make_chat(engine)).launch()

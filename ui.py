@@ -59,9 +59,10 @@ HEADER = """
 """
 
 EXAMPLES = [
-    "What agentic tools were used?",
-    "Summarize the key decisions that were made.",
-    "Which bugs were fixed and how?",
+    "How many issues are there of each type?",          # structured: count
+    "List the open issues.",                            # structured: filter by status
+    "Why was plain text chosen instead of preserving formatting?",  # semantic
+    "Summarize the key decisions that were made.",      # semantic
 ]
 
 

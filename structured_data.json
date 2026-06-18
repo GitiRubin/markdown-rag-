@@ -1,0 +1,403 @@
+{
+  "decisions": [
+    {
+      "id": "Decision 5",
+      "date": "2026-06-08",
+      "title": "Handle files in memory, not on disk",
+      "decision": "Read uploaded files and build output files using `io.BytesIO` rather than writing temporary files to disk.",
+      "rationale": "Streamlit's `file_uploader` already gives an in-memory file-like object, and `python-docx` can read/write file-like objects directly. Avoiding disk I/O keeps the app simpler, avoids temp-file cleanup, and sidesteps OS/permission issues.",
+      "trade_off": null,
+      "status": "active",
+      "source_files": [
+        "decisions.md"
+      ]
+    },
+    {
+      "id": "Decision 4",
+      "date": "2026-06-08",
+      "title": "Preserve plain text only, not formatting",
+      "decision": "The MVP extracts and regenerates only the plain text of each paragraph. Bold text, fonts, styles, tables, and images are not preserved.",
+      "rationale": "Preserving full DOCX formatting is significantly more complex because it requires walking and rebuilding the document's XML structure. That complexity is out of scope for a preparation project whose real purpose is to set up for a later RAG system. Plain text is also the content a basic RAG pipeline is most likely to need first.",
+      "trade_off": "If formatting preservation becomes necessary, revisit by editing runs in-place on the original document instead of rebuilding from plain text.",
+      "status": "active",
+      "source_files": [
+        "decisions.md"
+      ]
+    },
+    {
+      "id": "Decision 3",
+      "date": "2026-06-08",
+      "title": "Split DOCX logic from UI",
+      "decision": "Put all DOCX read/write logic in `docx_utils.py` with no Streamlit imports, and keep `app.py` for UI only.",
+      "rationale": "The future RAG system will likely reuse the DOCX I/O logic but not the Streamlit UI. Keeping them separate makes that reuse clean and keeps each file easy to test and reason about.",
+      "trade_off": null,
+      "status": "active",
+      "source_files": [
+        "decisions.md"
+      ]
+    },
+    {
+      "id": "Decision 2",
+      "date": "2026-06-08",
+      "title": "One paragraph per line as the editing model",
+      "decision": "Join extracted paragraphs with newlines into a single text area; on generation, split the edited text back into paragraphs by newline.",
+      "rationale": "It is the simplest editing model that maps cleanly onto the DOCX paragraph structure. It is intuitive for the user and simple to implement. Empty lines are kept as empty paragraphs to preserve spacing intent.",
+      "trade_off": null,
+      "status": "active",
+      "source_files": [
+        "decisions.md"
+      ]
+    },
+    {
+      "id": "Decision 1",
+      "date": "2026-06-08",
+      "title": "Streamlit and python-docx as the stack",
+      "decision": "Build the MVP with Streamlit for the UI and python-docx for DOCX I/O in Python.",
+      "rationale": "This stack was specified for the project. Streamlit gives a working web UI with little boilerplate, and python-docx is a standard Python library for `.docx` files. Both fit a small preparation project.",
+      "trade_off": null,
+      "status": "active",
+      "source_files": [
+        "decisions.md"
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "title": "MVP Scope Limitations",
+      "type": "limitation",
+      "status": "accepted",
+      "description": "The MVP explicitly does not include formatting preservation, tables, images, headers, footers, comments, tracked changes, or style handling. It also excludes authentication, persistence, user accounts, databases, background jobs, LLM calls, embeddings, vector search, or RAG features.",
+      "resolution": null,
+      "component": null,
+      "date": null,
+      "source_files": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "title": "python-docx not installed when running the smoke test",
+      "type": "bug",
+      "status": "resolved",
+      "description": "The first round-trip smoke test failed immediately with a ModuleNotFoundError due to 'docx' not being installed.",
+      "resolution": "Ran `pip install -r requirements.txt`, confirmed `python-docx` was installed, then re-ran the smoke test.",
+      "component": "docx_utils.py",
+      "date": "2026-06-08",
+      "source_files": [
+        "bugs-and-fixes.md",
+        "work-log.md"
+      ]
+    },
+    {
+      "title": "pip install exceeded the foreground command window",
+      "type": "limitation",
+      "status": "accepted",
+      "description": "`pip install -r requirements.txt` did not return within the normal foreground command limit and was moved to a background task.",
+      "resolution": "Let the install finish in the background, then verified completion before continuing.",
+      "component": null,
+      "date": "2026-06-08",
+      "source_files": [
+        "bugs-and-fixes.md",
+        "work-log.md"
+      ]
+    },
+    {
+      "title": "Hebrew project path rendered as garbled text in the console",
+      "type": "edge_case",
+      "status": "accepted",
+      "description": "The project path containing Hebrew characters displayed as replacement glyphs in the console.",
+      "resolution": "No fix needed for current functionality. The garbling is a display-only artifact.",
+      "component": null,
+      "date": "2026-06-08",
+      "source_files": [
+        "bugs-and-fixes.md",
+        "work-log.md"
+      ]
+    },
+    {
+      "title": "Newline handling assumes `\\n` only",
+      "type": "edge_case",
+      "status": "open",
+      "description": "`build_docx` splits the edited text with `text.split(\"\\n\")`. On Windows, uploaded or pasted content can use `\\r\\n` line endings.",
+      "resolution": "Mitigation for later: normalize line endings before splitting.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md"
+      ]
+    },
+    {
+      "title": "Only top-level paragraphs are extracted",
+      "type": "limitation",
+      "status": "accepted",
+      "description": "`extract_paragraphs` reads `document.paragraphs` only. Text inside tables, headers, and footers is silently dropped.",
+      "resolution": "Known scope limit of the MVP; future system should walk tables and section parts if full extraction is required.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md"
+      ]
+    },
+    {
+      "title": "Empty documents produce an empty editor",
+      "type": "edge_case",
+      "status": "open",
+      "description": "If a valid `.docx` contains no top-level paragraph text, the app will show an empty text area.",
+      "resolution": "Future version could distinguish \"empty document\" from \"unsupported content locations.\"",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md"
+      ]
+    },
+    {
+      "title": "No error handling for corrupt or non-DOCX files",
+      "type": "risk",
+      "status": "open",
+      "description": "The uploader restricts selection to `.docx`, but a renamed, corrupt, or password-protected file would still raise an unhandled exception.",
+      "resolution": "Mitigation for later: wrap extraction in `try/except` and show `st.error(...)`.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md"
+      ]
+    },
+    {
+      "title": "Legacy `.doc` is not supported",
+      "type": "limitation",
+      "status": "accepted",
+      "description": "`python-docx` reads only the Office Open XML `.docx` format, not the older binary `.doc`.",
+      "resolution": "File-type filter currently masks this, but it is a hard limitation of the library.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md"
+      ]
+    },
+    {
+      "title": "Plain-text-only round trip loses formatting",
+      "type": "limitation",
+      "status": "accepted",
+      "description": "Only paragraph text is preserved. Bold, fonts, styles, tables, and images are lost on regeneration.",
+      "resolution": "Accepted trade-off for the MVP.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md"
+      ]
+    },
+    {
+      "title": "A trailing newline produces an extra empty paragraph",
+      "type": "edge_case",
+      "status": "open",
+      "description": "Text ending in a newline yields a trailing empty paragraph in the generated document.",
+      "resolution": "Harmless today, but a thing to be aware of if exact paragraph counts ever matter.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md"
+      ]
+    },
+    {
+      "title": "Output filename is fixed",
+      "type": "limitation",
+      "status": "accepted",
+      "description": "The generated file is always named `formatted_resume.docx` regardless of the input filename.",
+      "resolution": "Not a bug, but a small UX limitation worth revisiting.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md"
+      ]
+    },
+    {
+      "title": "Large documents may make the Streamlit editor awkward",
+      "type": "risk",
+      "status": "open",
+      "description": "The app loads all extracted text into one `st.text_area`. A large document could become slow or uncomfortable to edit.",
+      "resolution": "Future RAG system may need chunking, pagination, or section-level processing.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md"
+      ]
+    },
+    {
+      "title": "No automated test coverage",
+      "type": "future_concern",
+      "status": "open",
+      "description": "There are no committed automated tests for `extract_paragraphs` or `build_docx`.",
+      "resolution": "Future changes should add tests with small generated `.docx` fixtures.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md",
+        "codex-review.md"
+      ]
+    },
+    {
+      "title": "No `.gitignore` yet",
+      "type": "future_concern",
+      "status": "open",
+      "description": "The folder currently contains `__pycache__/`, which is generated bytecode and not source.",
+      "resolution": "Add a `.gitignore` before committing if this project becomes a Git repository.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md",
+        "codex-review.md"
+      ]
+    },
+    {
+      "title": "Uploaded resume content is sensitive",
+      "type": "risk",
+      "status": "open",
+      "description": "Resumes can contain personal data. The current app handles files in memory and does not persist them.",
+      "resolution": "If later work adds logging, storage, LLM calls, or RAG indexing, privacy rules must be documented.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md"
+      ]
+    },
+    {
+      "title": "Unicode and bidirectional text may need explicit validation",
+      "type": "edge_case",
+      "status": "open",
+      "description": "Resumes may contain Hebrew, Arabic, accented Latin characters, symbols, or mixed text.",
+      "resolution": "Future steps should be checked with multilingual samples.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md"
+      ]
+    },
+    {
+      "title": "RAG chunk boundaries may not match DOCX paragraphs",
+      "type": "future_concern",
+      "status": "open",
+      "description": "The MVP uses one DOCX paragraph per editor line, which may not be the right retrieval model for a future RAG system.",
+      "resolution": "Later RAG work should define chunking rules separately.",
+      "component": null,
+      "date": null,
+      "source_files": [
+        "bugs-and-fixes.md"
+      ]
+    },
+    {
+      "title": "Formatting not preserved",
+      "type": "limitation",
+      "status": "accepted",
+      "description": "Formatting is not preserved; only plain paragraph text is retained. This is intentional for the MVP.",
+      "resolution": null,
+      "component": null,
+      "date": null,
+      "source_files": [
+        "CLAUDE.md",
+        "codex-review.md",
+        "README.md"
+      ]
+    },
+    {
+      "title": "`extract_paragraphs` error handling",
+      "type": "limitation",
+      "status": "open",
+      "description": "`extract_paragraphs` does not handle invalid, corrupt, encrypted, or unsupported DOCX files with user-friendly errors.",
+      "resolution": null,
+      "component": null,
+      "date": null,
+      "source_files": [
+        "codex-review.md"
+      ]
+    },
+    {
+      "title": "Single text area for long resumes",
+      "type": "limitation",
+      "status": "open",
+      "description": "The app uses a single text area, which is sufficient for the MVP but may be hard to use with very long resumes.",
+      "resolution": null,
+      "component": null,
+      "date": null,
+      "source_files": [
+        "codex-review.md"
+      ]
+    },
+    {
+      "title": "No persistence or audit trail",
+      "type": "limitation",
+      "status": "accepted",
+      "description": "The app currently has no persistence or audit trail. That is acceptable for the MVP and should not be added without a scope change.",
+      "resolution": null,
+      "component": null,
+      "date": null,
+      "source_files": [
+        "codex-review.md"
+      ]
+    },
+    {
+      "title": "Documentation improvements for RAG ingestion",
+      "type": "future_concern",
+      "status": "open",
+      "description": "Current documentation is useful for project memory, but future RAG ingestion will benefit from consistent headings, short sections, and stable filenames.",
+      "resolution": null,
+      "component": null,
+      "date": null,
+      "source_files": [
+        "codex-review.md"
+      ]
+    },
+    {
+      "title": "Potential Issues and Limitations",
+      "type": "limitation",
+      "status": "open",
+      "description": "Real, code-level risks identified: `\\n`-only newline handling, top-level-paragraphs-only extraction, no error handling for bad files, no legacy `.doc` support, plain-text-only round trip, trailing empty paragraph, and the fixed output filename.",
+      "resolution": null,
+      "component": null,
+      "date": "2026-06-08",
+      "source_files": [
+        "work-log.md"
+      ]
+    }
+  ],
+  "work_log": [
+    {
+      "date": "2026-06-08",
+      "title": "Expanded issue classification",
+      "summary": "Reviewed `docs/bugs-and-fixes.md` for realistic project issues and reclassified non-event items. Added additional concerns for empty documents, large documents, missing tests, missing `.gitignore`, resume privacy, Unicode/bidirectional text, and future RAG chunk boundaries.",
+      "status": "Issue tracking is clearer for future RAG-oriented review.",
+      "changed_behavior": false,
+      "source_files": [
+        "work-log.md"
+      ]
+    },
+    {
+      "date": "2026-06-08",
+      "title": "Bug and limitation review",
+      "summary": "Reviewed code and development process. Updated `docs/bugs-and-fixes.md` with actual issues and added a section for potential issues and limitations.",
+      "status": "Bug and limitation tracking is current.",
+      "changed_behavior": false,
+      "source_files": [
+        "work-log.md"
+      ]
+    },
+    {
+      "date": "2026-06-08",
+      "title": "Codex documentation review",
+      "summary": "Reviewed Python implementation and Markdown documentation. Added `AGENTS.md`, `docs/tool-comparison.md`, and `docs/codex-review.md`. Cleaned `README.md` and `CLAUDE.md`.",
+      "status": "Documentation improved for future RAG-oriented project memory.",
+      "changed_behavior": false,
+      "source_files": [
+        "work-log.md"
+      ]
+    },
+    {
+      "date": "2026-06-08",
+      "title": "Initial MVP scaffold",
+      "summary": "Created project documentation and implemented core MVP components including `docx_utils.py` and `app.py`.",
+      "status": "Core MVP loop complete. Ready to run with `streamlit run app.py`.",
+      "changed_behavior": false,
+      "source_files": [
+        "work-log.md"
+      ]
+    }
+  ]
+}
